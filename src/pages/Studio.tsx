@@ -8,6 +8,7 @@ import { StreamControls } from "@/components/streaming/StreamControls";
 import { PlatformManager } from "@/components/streaming/PlatformManager";
 import { LiveChat } from "@/components/streaming/LiveChat";
 import { GuestManager } from "@/components/streaming/GuestManager";
+import { MediaPermissionError } from "@/components/streaming/MediaPermissionError";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useStream } from "@/hooks/useStream";
 import { useChat } from "@/hooks/useChat";
@@ -31,6 +32,7 @@ const Studio: React.FC = () => {
     isAudioEnabled,
     error: webRTCError,
     isInitializing,
+    permissionState,
     initializeMedia,
     toggleVideo,
     toggleAudio,
@@ -130,18 +132,21 @@ const Studio: React.FC = () => {
 
   if (webRTCError) {
     return (
-      <div className="container mx-auto py-8">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{webRTCError}</AlertDescription>
-        </Alert>
-        <div className="mt-4">
-          <Button onClick={initializeMedia}>Try Again</Button>
+      <div className="container mx-auto py-8 max-w-2xl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-2">Camera Setup Required</h1>
+          <p className="text-muted-foreground">
+            We need access to your camera and microphone to start streaming.
+          </p>
         </div>
+        <MediaPermissionError
+          error={webRTCError}
+          onRetry={initializeMedia}
+          permissionState={permissionState}
+        />
       </div>
     );
   }
-
   if (isInitializing) {
     return (
       <div className="container mx-auto py-8 text-center">
