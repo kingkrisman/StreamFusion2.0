@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VideoCapture } from "@/components/streaming/VideoCapture";
+import { MediaPermissionError } from "@/components/streaming/MediaPermissionError";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import {
   Users,
@@ -32,6 +33,7 @@ const JoinRoom: React.FC = () => {
     isAudioEnabled,
     error: webRTCError,
     isInitializing,
+    permissionState,
     initializeMedia,
     toggleVideo,
     toggleAudio,
@@ -79,18 +81,21 @@ const JoinRoom: React.FC = () => {
 
   if (webRTCError) {
     return (
-      <div className="container mx-auto py-8">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{webRTCError}</AlertDescription>
-        </Alert>
-        <div className="mt-4">
-          <Button onClick={initializeMedia}>Try Again</Button>
+      <div className="container mx-auto py-8 max-w-2xl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-2">Camera Setup Required</h1>
+          <p className="text-muted-foreground">
+            To join the stream, we need access to your camera and microphone.
+          </p>
         </div>
+        <MediaPermissionError
+          error={webRTCError}
+          onRetry={initializeMedia}
+          permissionState={permissionState}
+        />
       </div>
     );
   }
-
   return (
     <div className="container mx-auto py-6 max-w-4xl">
       {/* Header */}
