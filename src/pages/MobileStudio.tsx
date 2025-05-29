@@ -11,7 +11,6 @@ import { StreamAnalytics } from "@/components/streaming/StreamAnalytics";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useStream } from "@/hooks/useStream";
 import { useChat } from "@/hooks/useChat";
-import { useMobile } from "@/hooks/use-mobile";
 import {
   Users,
   MessageCircle,
@@ -25,7 +24,9 @@ import { v4 as uuidv4 } from "uuid";
 
 const MobileStudio: React.FC = () => {
   const [isInitialized, setIsInitialized] = useState(false);
-  const isMobile = useMobile();
+
+  // Simple mobile detection
+  const isMobile = window.innerWidth < 768;
 
   const {
     localStream,
