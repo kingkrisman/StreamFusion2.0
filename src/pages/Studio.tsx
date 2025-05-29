@@ -22,8 +22,11 @@ import {
   Users,
   MessageCircle,
   Monitor,
+  BarChart3,
+  Calendar,
+  Layers,
 } from "lucide-react";
-import { Guest } from "@/types/streaming";
+import { Guest, StreamOverlay } from "@/types/streaming";
 import { v4 as uuidv4 } from "uuid";
 
 const Studio: React.FC = () => {
@@ -190,6 +193,7 @@ const Studio: React.FC = () => {
       </div>
     );
   }
+
   if (isInitializing) {
     return (
       <div className="container mx-auto py-8 text-center">
@@ -210,7 +214,7 @@ const Studio: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold">Live Studio</h1>
           <p className="text-muted-foreground">
-            Stream to multiple platforms simultaneously
+            Stream to multiple platforms simultaneously with advanced features
           </p>
         </div>
       </div>
@@ -219,7 +223,7 @@ const Studio: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Video & Controls */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Video Preview */}
+          {/* Enhanced Video Preview */}
           <EnhancedVideoCapture
             localVideoRef={localVideoRef}
             screenVideoRef={screenVideoRef}
@@ -243,7 +247,7 @@ const Studio: React.FC = () => {
           />
         </div>
 
-        {/* Right Column - Chat & Management */}
+        {/* Right Column - Enhanced Management Panel */}
         <div className="space-y-6">
           <Tabs defaultValue="chat" className="h-full">
             <TabsList className="grid w-full grid-cols-5">
