@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Studio from "./pages/Studio";
 import Dashboard from "./pages/Dashboard";
+import EnhancedDashboard from "./pages/EnhancedDashboard";
+import MobileStudio from "./pages/MobileStudio";
 import JoinRoom from "./pages/JoinRoom";
 import NotFound from "./pages/NotFound";
 
@@ -20,7 +22,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/studio" element={<Studio />} />
+          <Route path="/mobile-studio" element={<MobileStudio />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
           <Route path="/join/:roomId" element={<JoinRoom />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
