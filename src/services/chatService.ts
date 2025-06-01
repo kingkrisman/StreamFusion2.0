@@ -42,7 +42,7 @@ class ChatService {
 
   private initializeSocket() {
     const socketUrl =
-      process.env.NODE_ENV === "production"
+      import.meta.env.MODE === "production"
         ? "https://chat-server.fly.dev"
         : "http://localhost:3001";
 

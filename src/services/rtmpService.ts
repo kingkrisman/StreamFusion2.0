@@ -23,7 +23,7 @@ class RTMPStreamingService {
   private initializeWebSocket() {
     // Connect to streaming server
     const wsUrl =
-      process.env.NODE_ENV === "production"
+      import.meta.env.MODE === "production"
         ? "wss://stream-server.fly.dev/ws"
         : "ws://localhost:8080/ws";
 

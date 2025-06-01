@@ -20,38 +20,48 @@ class AuthService {
 
   private initializeConfigs() {
     // YouTube OAuth2 Configuration
-    this.authConfigs.set("youtube", {
-      clientId:
-        process.env.REACT_APP_YOUTUBE_CLIENT_ID || "your-youtube-client-id",
+    this.authConfigs.set('youtube', {
+      clientId: import.meta.env.VITE_YOUTUBE_CLIENT_ID || 'your-youtube-client-id',
       redirectUri: `${window.location.origin}/auth/youtube/callback`,
       scopes: [
-        "https://www.googleapis.com/auth/youtube.readonly",
-        "https://www.googleapis.com/auth/youtube.force-ssl",
-      ],
+        'https://www.googleapis.com/auth/youtube.readonly',
+        'https://www.googleapis.com/auth/youtube.force-ssl'
+      ]
     });
 
     // Twitch OAuth2 Configuration
-    this.authConfigs.set("twitch", {
-      clientId:
-        process.env.REACT_APP_TWITCH_CLIENT_ID || "your-twitch-client-id",
+    this.authConfigs.set('twitch', {
+      clientId: import.meta.env.VITE_TWITCH_CLIENT_ID || 'your-twitch-client-id',
       redirectUri: `${window.location.origin}/auth/twitch/callback`,
-      scopes: ["chat:read", "chat:edit", "channel:read:stream_key"],
+      scopes: [
+        'chat:read',
+        'chat:edit',
+        'channel:read:stream_key'
+      ]
     });
 
     // Facebook OAuth2 Configuration
-    this.authConfigs.set("facebook", {
-      clientId:
-        process.env.REACT_APP_FACEBOOK_CLIENT_ID || "your-facebook-client-id",
+    this.authConfigs.set('facebook', {
+      clientId: import.meta.env.VITE_FACEBOOK_CLIENT_ID || 'your-facebook-client-id',
       redirectUri: `${window.location.origin}/auth/facebook/callback`,
-      scopes: ["pages_read_engagement", "pages_manage_posts", "publish_video"],
+      scopes: [
+        'pages_read_engagement',
+        'pages_manage_posts',
+        'publish_video'
+      ]
     });
 
     // X (Twitter) OAuth2 Configuration
-    this.authConfigs.set("x", {
-      clientId: process.env.REACT_APP_X_CLIENT_ID || "your-x-client-id",
+    this.authConfigs.set('x', {
+      clientId: import.meta.env.VITE_X_CLIENT_ID || 'your-x-client-id',
       redirectUri: `${window.location.origin}/auth/x/callback`,
-      scopes: ["tweet.read", "tweet.write", "users.read"],
+      scopes: [
+        'tweet.read',
+        'tweet.write',
+        'users.read'
+      ]
     });
+  }
   }
 
   // YouTube Authentication

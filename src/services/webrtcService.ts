@@ -31,7 +31,7 @@ class WebRTCService {
 
   private initializeSignaling() {
     const signalingUrl =
-      process.env.NODE_ENV === "production"
+      import.meta.env.MODE === "production"
         ? "wss://signaling-server.fly.dev"
         : "ws://localhost:8081";
 
