@@ -19,6 +19,10 @@ class WebRTCService {
   private signalingSocket: WebSocket | null = null;
   private roomId: string | null = null;
   private isHost: boolean = false;
+  private connectionAttempts = 0;
+  private maxConnectionAttempts = 3;
+  private isBackendAvailable = false;
+
   private onRemoteStreamCallback?: (
     peerId: string,
     stream: MediaStream,
@@ -29,27 +33,27 @@ class WebRTCService {
     this.initializeSignaling();
   }
 
-  private connectionAttempts = 0;
-  private maxConnectionAttempts = 3;
-  private isBackendAvailable = false;
-
   private async initializeSignaling() {
     // Skip connection in demo mode or after max attempts
     if (this.connectionAttempts >= this.maxConnectionAttempts) {
-      console.log('[WebRTC] Backend unavailable, running in demo mode');
+      console.log("[WebRTC] Backend unavailable, running in demo mode");
       return;
     }
 
-    const signalingUrl = import.meta.env.MODE === 'production'
-      ? 'wss://signaling-server.fly.dev'
-      : 'ws://localhost:8081';
+    const signalingUrl =
+      import.meta.env.MODE === "production"
+        ? "wss://signaling-server.fly.dev"
+        : "ws://localhost:8081";
 
     try {
       this.signalingSocket = new WebSocket(signalingUrl);
 
       // Set timeout for connection
       const connectionTimeout = setTimeout(() => {
-        if (this.signalingSocket && this.signalingSocket.readyState === WebSocket.CONNECTING) {
+        if (
+          this.signalingSocket &&
+          this.signalingSocket.readyState === WebSocket.CONNECTING
+        ) {
           this.signalingSocket.close();
         }
       }, 3000);
@@ -58,7 +62,7 @@ class WebRTCService {
         clearTimeout(connectionTimeout);
         this.connectionAttempts = 0;
         this.isBackendAvailable = true;
-        console.log('[WebRTC] Connected to signaling server');
+        console.log("[WebRTC] Connected to signaling server");
       };
 
       this.signalingSocket.onmessage = (event) => {
@@ -69,7 +73,7 @@ class WebRTCService {
       this.signalingSocket.onclose = () => {
         clearTimeout(connectionTimeout);
         if (this.isBackendAvailable) {
-          console.log('[WebRTC] Disconnected from signaling server');
+          console.log("[WebRTC] Disconnected from signaling server");
           this.isBackendAvailable = false;
           // Only attempt to reconnect if we were previously connected
           if (this.connectionAttempts < this.maxConnectionAttempts) {
@@ -81,17 +85,22 @@ class WebRTCService {
       this.signalingSocket.onerror = (error) => {
         clearTimeout(connectionTimeout);
         this.connectionAttempts++;
-        console.log(`[WebRTC] Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts} failed`);
+        console.log(
+          `[WebRTC] Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts} failed`,
+        );
 
         if (this.connectionAttempts >= this.maxConnectionAttempts) {
-          console.log('[WebRTC] Backend unavailable, guest features will use demo mode');
+          console.log(
+            "[WebRTC] Backend unavailable, guest features will use demo mode",
+          );
         }
       };
     } catch (error) {
       this.connectionAttempts++;
-      console.log('[WebRTC] Failed to create WebSocket connection, using demo mode');
+      console.log(
+        "[WebRTC] Failed to create WebSocket connection, using demo mode",
+      );
     }
-  }
   }
 
   private async handleSignalingMessage(message: SignalingMessage) {
@@ -131,9 +140,12 @@ class WebRTCService {
             isHost: true,
           }),
         );
+        console.log("[WebRTC] Created room:", roomId);
         return true;
+      } else {
+        console.log("[WebRTC] Demo mode: Room created locally");
+        return true; // Still return true for demo mode
       }
-      return false;
     } catch (error) {
       console.error("Failed to create room:", error);
       return false;
@@ -157,9 +169,12 @@ class WebRTCService {
             isHost: false,
           }),
         );
+        console.log("[WebRTC] Joined room:", roomId);
         return true;
+      } else {
+        console.log("[WebRTC] Demo mode: Room joined locally");
+        return true; // Still return true for demo mode
       }
-      return false;
     } catch (error) {
       console.error("Failed to join room:", error);
       return false;
@@ -171,12 +186,6 @@ class WebRTCService {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
-        // Add TURN servers for production
-        {
-          urls: "turn:turnserver.example.com:3478",
-          username: "username",
-          credential: "password",
-        },
       ],
     };
 
@@ -199,7 +208,11 @@ class WebRTCService {
 
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
-      if (event.candidate && this.signalingSocket) {
+      if (
+        event.candidate &&
+        this.signalingSocket &&
+        this.signalingSocket.readyState === WebSocket.OPEN
+      ) {
         this.signalingSocket.send(
           JSON.stringify({
             type: "ice-candidate",
@@ -214,7 +227,10 @@ class WebRTCService {
 
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
-      console.log(`Peer ${peerId} connection state:`, pc.connectionState);
+      console.log(
+        `[WebRTC] Peer ${peerId} connection state:`,
+        pc.connectionState,
+      );
       if (
         pc.connectionState === "disconnected" ||
         pc.connectionState === "failed"
@@ -243,7 +259,10 @@ class WebRTCService {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      if (this.signalingSocket) {
+      if (
+        this.signalingSocket &&
+        this.signalingSocket.readyState === WebSocket.OPEN
+      ) {
         this.signalingSocket.send(
           JSON.stringify({
             type: "offer",
@@ -268,7 +287,10 @@ class WebRTCService {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
-      if (this.signalingSocket) {
+      if (
+        this.signalingSocket &&
+        this.signalingSocket.readyState === WebSocket.OPEN
+      ) {
         this.signalingSocket.send(
           JSON.stringify({
             type: "answer",
@@ -340,7 +362,11 @@ class WebRTCService {
   }
 
   leaveRoom() {
-    if (this.signalingSocket && this.roomId) {
+    if (
+      this.signalingSocket &&
+      this.roomId &&
+      this.signalingSocket.readyState === WebSocket.OPEN
+    ) {
       this.signalingSocket.send(
         JSON.stringify({
           type: "leave-room",
@@ -356,6 +382,8 @@ class WebRTCService {
 
     this.roomId = null;
     this.isHost = false;
+
+    console.log("[WebRTC] Left room");
   }
 
   toggleLocalVideo(enabled: boolean) {
@@ -396,6 +424,10 @@ class WebRTCService {
         await sender.replaceTrack(newVideoTrack);
       }
     }
+  }
+
+  isBackendConnected(): boolean {
+    return this.isBackendAvailable;
   }
 }
 

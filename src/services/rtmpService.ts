@@ -15,32 +15,35 @@ interface StreamingSession {
 class RTMPStreamingService {
   private streamingSessions: Map<string, StreamingSession> = new Map();
   private wsConnection: WebSocket | null = null;
+  private connectionAttempts = 0;
+  private maxConnectionAttempts = 3;
+  private isBackendAvailable = false;
 
   constructor() {
     this.initializeWebSocket();
   }
 
-  private connectionAttempts = 0;
-  private maxConnectionAttempts = 3;
-  private isBackendAvailable = false;
-
   private async initializeWebSocket() {
     // Skip connection in demo mode or after max attempts
     if (this.connectionAttempts >= this.maxConnectionAttempts) {
-      console.log('[RTMP] Backend unavailable, running in demo mode');
+      console.log("[RTMP] Backend unavailable, running in demo mode");
       return;
     }
 
-    const wsUrl = import.meta.env.MODE === 'production'
-      ? 'wss://stream-server.fly.dev/ws'
-      : 'ws://localhost:8080/ws';
+    const wsUrl =
+      import.meta.env.MODE === "production"
+        ? "wss://stream-server.fly.dev/ws"
+        : "ws://localhost:8080/ws";
 
     try {
       this.wsConnection = new WebSocket(wsUrl);
 
       // Set timeout for connection
       const connectionTimeout = setTimeout(() => {
-        if (this.wsConnection && this.wsConnection.readyState === WebSocket.CONNECTING) {
+        if (
+          this.wsConnection &&
+          this.wsConnection.readyState === WebSocket.CONNECTING
+        ) {
           this.wsConnection.close();
         }
       }, 3000);
@@ -49,13 +52,13 @@ class RTMPStreamingService {
         clearTimeout(connectionTimeout);
         this.connectionAttempts = 0;
         this.isBackendAvailable = true;
-        console.log('[RTMP] Connected to streaming server');
+        console.log("[RTMP] Connected to streaming server");
       };
 
       this.wsConnection.onclose = () => {
         clearTimeout(connectionTimeout);
         if (this.isBackendAvailable) {
-          console.log('[RTMP] Disconnected from streaming server');
+          console.log("[RTMP] Disconnected from streaming server");
           this.isBackendAvailable = false;
           // Only attempt to reconnect if we were previously connected
           if (this.connectionAttempts < this.maxConnectionAttempts) {
@@ -67,17 +70,20 @@ class RTMPStreamingService {
       this.wsConnection.onerror = (error) => {
         clearTimeout(connectionTimeout);
         this.connectionAttempts++;
-        console.log(`[RTMP] Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts} failed`);
+        console.log(
+          `[RTMP] Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts} failed`,
+        );
 
         if (this.connectionAttempts >= this.maxConnectionAttempts) {
-          console.log('[RTMP] Backend unavailable, switching to demo mode');
+          console.log("[RTMP] Backend unavailable, switching to demo mode");
         }
       };
     } catch (error) {
       this.connectionAttempts++;
-      console.log('[RTMP] Failed to create WebSocket connection, using demo mode');
+      console.log(
+        "[RTMP] Failed to create WebSocket connection, using demo mode",
+      );
     }
-  }
   }
 
   async startMultiStream(
@@ -115,7 +121,7 @@ class RTMPStreamingService {
       };
       renderFrame();
 
-      // Send stream data to server for RTMP distribution
+      // Send stream data to server for RTMP distribution (if backend available)
       if (
         this.wsConnection &&
         this.wsConnection.readyState === WebSocket.OPEN
@@ -132,6 +138,12 @@ class RTMPStreamingService {
               bitrate: 2500000,
             },
           }),
+        );
+        console.log("[RTMP] Sent stream config to backend");
+      } else {
+        console.log(
+          "[RTMP] Demo mode: Simulating RTMP stream to platforms:",
+          platforms.map((p) => p.platform),
         );
       }
 
@@ -218,7 +230,7 @@ class RTMPStreamingService {
         session.mediaRecorder.stop();
       }
 
-      // Notify server to stop RTMP streams
+      // Notify server to stop RTMP streams (if backend available)
       if (
         this.wsConnection &&
         this.wsConnection.readyState === WebSocket.OPEN
@@ -229,6 +241,9 @@ class RTMPStreamingService {
             sessionId,
           }),
         );
+        console.log("[RTMP] Sent stop stream to backend");
+      } else {
+        console.log("[RTMP] Demo mode: Simulating stream stop");
       }
 
       this.streamingSessions.delete(sessionId);
@@ -241,27 +256,35 @@ class RTMPStreamingService {
 
   private async saveRecording(sessionId: string, blob: Blob) {
     try {
-      // Upload to server or save locally
-      const formData = new FormData();
-      formData.append(
-        "recording",
-        blob,
-        `stream-${sessionId}-${Date.now()}.webm`,
-      );
-      formData.append("sessionId", sessionId);
+      // Try to upload to server or save locally
+      if (this.isBackendAvailable) {
+        const formData = new FormData();
+        formData.append(
+          "recording",
+          blob,
+          `stream-${sessionId}-${Date.now()}.webm`,
+        );
+        formData.append("sessionId", sessionId);
 
-      const response = await fetch("/api/recordings", {
-        method: "POST",
-        body: formData,
-      });
+        const response = await fetch("/api/recordings", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (response.ok) {
-        console.log("Recording saved successfully");
+        if (response.ok) {
+          console.log("[RTMP] Recording saved to server");
+        } else {
+          console.log(
+            "[RTMP] Server upload failed, recording available for download",
+          );
+        }
       } else {
-        console.error("Failed to save recording");
+        console.log("[RTMP] Demo mode: Recording ready for download");
       }
     } catch (error) {
-      console.error("Error saving recording:", error);
+      console.log(
+        "[RTMP] Recording save failed, but file is available for download",
+      );
     }
   }
 
@@ -288,6 +311,10 @@ class RTMPStreamingService {
         instructions: "Get your stream key from X Media Studio > Producer",
       },
     };
+  }
+
+  isBackendConnected(): boolean {
+    return this.isBackendAvailable;
   }
 }
 
