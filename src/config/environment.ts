@@ -81,6 +81,6 @@ const production: EnvironmentConfig = {
 };
 
 export const config =
-  process.env.NODE_ENV === "production" ? production : development;
+  import.meta.env.MODE === "production" ? production : development;
 
 export default config;
