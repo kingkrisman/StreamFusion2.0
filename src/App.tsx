@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Studio from "./pages/Studio";
+import RealStudio from "./pages/RealStudio";
 import Dashboard from "./pages/Dashboard";
 import EnhancedDashboard from "./pages/EnhancedDashboard";
 import MobileStudio from "./pages/MobileStudio";
@@ -22,6 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/studio" element={<Studio />} />
+          <Route path="/real-studio" element={<RealStudio />} />
           <Route path="/mobile-studio" element={<MobileStudio />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
