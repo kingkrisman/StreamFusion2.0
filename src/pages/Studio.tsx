@@ -209,135 +209,147 @@ const Studio: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto py-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Live Studio</h1>
-          <p className="text-muted-foreground">
-            Stream to multiple platforms simultaneously with advanced features
-          </p>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Video & Controls */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Enhanced Video Preview */}
-          <EnhancedVideoCapture
-            localVideoRef={localVideoRef}
-            screenVideoRef={screenVideoRef}
-            isVideoEnabled={isVideoEnabled}
-            isAudioEnabled={isAudioEnabled}
-            isScreenSharing={isScreenSharing}
-            onToggleVideo={toggleVideo}
-            onToggleAudio={toggleAudio}
-            onToggleScreenShare={handleToggleScreenShare}
-            guests={streamState.guests}
-          />
-
-          {/* Stream Controls */}
-          <StreamControls
-            streamState={streamState}
-            onStartStream={handleStartStream}
-            onStopStream={handleStopStream}
-            onStartRecording={handleStartRecording}
-            onStopRecording={handleStopRecording}
-            onDownloadRecording={downloadRecording}
-          />
+    <>
+      <DemoNotification />
+      <div className="container mx-auto py-4 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Live Studio</h1>
+            <p className="text-muted-foreground">
+              Stream to multiple platforms simultaneously with advanced features
+            </p>
+          </div>
         </div>
 
-        {/* Right Column - Enhanced Management Panel */}
-        <div className="space-y-6">
-          <Tabs defaultValue="chat" className="h-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="chat" className="flex items-center gap-2">
-                <MessageCircle className="w-4 h-4" />
-                Chat
-              </TabsTrigger>
-              <TabsTrigger value="guests" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Guests
-              </TabsTrigger>
-              <TabsTrigger
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Video & Controls */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Enhanced Video Preview */}
+            <EnhancedVideoCapture
+              localVideoRef={localVideoRef}
+              screenVideoRef={screenVideoRef}
+              isVideoEnabled={isVideoEnabled}
+              isAudioEnabled={isAudioEnabled}
+              isScreenSharing={isScreenSharing}
+              onToggleVideo={toggleVideo}
+              onToggleAudio={toggleAudio}
+              onToggleScreenShare={handleToggleScreenShare}
+              guests={streamState.guests}
+            />
+
+            {/* Stream Controls */}
+            <StreamControls
+              streamState={streamState}
+              onStartStream={handleStartStream}
+              onStopStream={handleStopStream}
+              onStartRecording={handleStartRecording}
+              onStopRecording={handleStopRecording}
+              onDownloadRecording={downloadRecording}
+            />
+          </div>
+
+          {/* Right Column - Enhanced Management Panel */}
+          <div className="space-y-6">
+            <Tabs defaultValue="chat" className="h-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="chat" className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  Chat
+                </TabsTrigger>
+                <TabsTrigger value="guests" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Guests
+                </TabsTrigger>
+                <TabsTrigger
+                  value="analytics"
+                  className="flex items-center gap-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger
+                  value="overlays"
+                  className="flex items-center gap-2"
+                >
+                  <Layers className="w-4 h-4" />
+                  Overlays
+                </TabsTrigger>
+                <TabsTrigger
+                  value="settings"
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="chat" className="h-[600px]">
+                <LiveChat
+                  messages={messages}
+                  onSendMessage={sendMessage}
+                  className="h-full"
+                />
+              </TabsContent>
+
+              <TabsContent value="guests" className="h-[600px] overflow-auto">
+                <GuestManager
+                  guests={streamState.guests}
+                  onInviteGuest={handleInviteGuest}
+                  onRemoveGuest={removeGuest}
+                  onToggleGuestAudio={handleToggleGuestAudio}
+                  onToggleGuestVideo={handleToggleGuestVideo}
+                />
+              </TabsContent>
+
+              <TabsContent
                 value="analytics"
-                className="flex items-center gap-2"
+                className="h-[600px] overflow-auto"
               >
-                <BarChart3 className="w-4 h-4" />
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value="overlays" className="flex items-center gap-2">
-                <Layers className="w-4 h-4" />
-                Overlays
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <Settings className="w-4 h-4" />
-                Settings
-              </TabsTrigger>
-            </TabsList>
+                <StreamAnalytics
+                  viewerCount={streamState.viewerCount}
+                  peakViewers={Math.max(streamState.viewerCount, 156)}
+                  chatMessages={messages.length}
+                  likes={Math.floor(streamState.viewerCount * 0.3)}
+                  shares={Math.floor(streamState.viewerCount * 0.1)}
+                  duration={streamState.duration}
+                  bandwidth={2500}
+                  quality={settings.quality}
+                />
+              </TabsContent>
 
-            <TabsContent value="chat" className="h-[600px]">
-              <LiveChat
-                messages={messages}
-                onSendMessage={sendMessage}
-                className="h-full"
-              />
-            </TabsContent>
+              <TabsContent value="overlays" className="h-[600px] overflow-auto">
+                <StreamOverlays
+                  overlays={overlays}
+                  onAddOverlay={handleAddOverlay}
+                  onUpdateOverlay={handleUpdateOverlay}
+                  onDeleteOverlay={handleDeleteOverlay}
+                />
+              </TabsContent>
 
-            <TabsContent value="guests" className="h-[600px] overflow-auto">
-              <GuestManager
-                guests={streamState.guests}
-                onInviteGuest={handleInviteGuest}
-                onRemoveGuest={removeGuest}
-                onToggleGuestAudio={handleToggleGuestAudio}
-                onToggleGuestVideo={handleToggleGuestVideo}
-              />
-            </TabsContent>
+              <TabsContent
+                value="settings"
+                className="h-[600px] overflow-auto space-y-4"
+              >
+                <PlatformManager
+                  platforms={streamState.platforms}
+                  onConnect={connectPlatform}
+                  onDisconnect={disconnectPlatform}
+                  onToggleEnabled={handleTogglePlatform}
+                />
 
-            <TabsContent value="analytics" className="h-[600px] overflow-auto">
-              <StreamAnalytics
-                viewerCount={streamState.viewerCount}
-                peakViewers={Math.max(streamState.viewerCount, 156)}
-                chatMessages={messages.length}
-                likes={Math.floor(streamState.viewerCount * 0.3)}
-                shares={Math.floor(streamState.viewerCount * 0.1)}
-                duration={streamState.duration}
-                bandwidth={2500}
-                quality={settings.quality}
-              />
-            </TabsContent>
-
-            <TabsContent value="overlays" className="h-[600px] overflow-auto">
-              <StreamOverlays
-                overlays={overlays}
-                onAddOverlay={handleAddOverlay}
-                onUpdateOverlay={handleUpdateOverlay}
-                onDeleteOverlay={handleDeleteOverlay}
-              />
-            </TabsContent>
-
-            <TabsContent
-              value="settings"
-              className="h-[600px] overflow-auto space-y-4"
-            >
-              <PlatformManager
-                platforms={streamState.platforms}
-                onConnect={connectPlatform}
-                onDisconnect={disconnectPlatform}
-                onToggleEnabled={handleTogglePlatform}
-              />
-
-              <StreamScheduler
-                scheduledStreams={scheduledStreams}
-                onScheduleStream={handleScheduleStream}
-                onDeleteStream={handleDeleteScheduledStream}
-              />
-            </TabsContent>
-          </Tabs>
+                <StreamScheduler
+                  scheduledStreams={scheduledStreams}
+                  onScheduleStream={handleScheduleStream}
+                  onDeleteStream={handleDeleteScheduledStream}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
