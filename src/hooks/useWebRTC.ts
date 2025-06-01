@@ -143,26 +143,77 @@ export const useWebRTC = () => {
     setError(null);
 
     try {
+      // First check if mediaDevices is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("MEDIA_NOT_SUPPORTED");
+      }
+
       await checkPermissions();
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // Try with fallback constraints for better compatibility
+      let constraints = {
         video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30 },
+          width: { ideal: 1920, min: 640 },
+          height: { ideal: 1080, min: 480 },
+          frameRate: { ideal: 30, min: 15 },
         },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
         },
-      });
+      };
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (highResError) {
+        console.warn(
+          "High resolution failed, trying lower resolution:",
+          highResError,
+        );
+        // Fallback to lower resolution
+        constraints = {
+          video: {
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            frameRate: { ideal: 30, min: 15 },
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        };
+
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (mediumResError) {
+          console.warn(
+            "Medium resolution failed, trying basic constraints:",
+            mediumResError,
+          );
+          // Final fallback to basic constraints
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+        }
+      }
 
       setLocalStream(stream);
       setPermissionState("granted");
 
+      // Ensure video element is properly set up
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        localVideoRef.current.muted = true; // Prevent audio feedback
+        localVideoRef.current.playsInline = true; // Better mobile support
+
+        // Handle video loading
+        localVideoRef.current.onloadedmetadata = () => {
+          localVideoRef.current?.play().catch(console.error);
+        };
       }
     } catch (err) {
       console.error("Error accessing media devices:", err);

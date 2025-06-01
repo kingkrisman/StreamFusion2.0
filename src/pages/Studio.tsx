@@ -178,11 +178,12 @@ const Studio: React.FC = () => {
 
   if (webRTCError) {
     return (
-      <div className="container mx-auto py-8 max-w-2xl">
+      <div className="container mx-auto py-8 max-w-4xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold mb-2">Camera Setup Required</h1>
           <p className="text-muted-foreground">
             We need access to your camera and microphone to start streaming.
+            Let's get this fixed!
           </p>
         </div>
         <MediaPermissionError

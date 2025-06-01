@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CameraTroubleshoot } from "./CameraTroubleshoot";
 import {
   AlertTriangle,
   Camera,
@@ -11,6 +13,7 @@ import {
   RefreshCw,
   Info,
   CheckCircle,
+  Wrench,
 } from "lucide-react";
 
 interface MediaErrorDetails {
@@ -191,15 +194,31 @@ export const MediaPermissionError: React.FC<MediaPermissionErrorProps> = ({
         </Card>
       )}
 
-      <div className="flex gap-3">
-        <Button onClick={onRetry} className="flex-1">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Try Again
-        </Button>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          Refresh Page
-        </Button>
-      </div>
+      <Tabs defaultValue="instructions" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="instructions">Instructions</TabsTrigger>
+          <TabsTrigger value="diagnostics">
+            <Wrench className="w-4 h-4 mr-2" />
+            Diagnostics
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="instructions" className="space-y-4">
+          <div className="flex gap-3">
+            <Button onClick={onRetry} className="flex-1">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Refresh Page
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="diagnostics">
+          <CameraTroubleshoot onRetry={onRetry} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
