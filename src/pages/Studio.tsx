@@ -27,6 +27,8 @@ import {
   Layers,
 } from "lucide-react";
 import { Guest, StreamOverlay } from "@/types/streaming";
+import { DemoNotification } from "@/components/DemoNotification";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { v4 as uuidv4 } from "uuid";
 
 const Studio: React.FC = () => {
