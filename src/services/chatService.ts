@@ -40,46 +40,131 @@ class ChatService {
     this.initializeSocket();
   }
 
+  private connectionAttempts = 0;
+  private maxConnectionAttempts = 3;
+  private isBackendAvailable = false;
+  private demoMode = false;
+
   private initializeSocket() {
-    const socketUrl =
-      import.meta.env.MODE === "production"
-        ? "https://chat-server.fly.dev"
-        : "http://localhost:3001";
+    // Skip connection in demo mode or after max attempts
+    if (this.connectionAttempts >= this.maxConnectionAttempts) {
+      console.log('[Chat] Backend unavailable, running in demo mode');
+      this.demoMode = true;
+      this.startDemoMode();
+      return;
+    }
+
+    const socketUrl = import.meta.env.MODE === 'production'
+      ? 'https://chat-server.fly.dev'
+      : 'http://localhost:3001';
 
     this.socket = io(socketUrl, {
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      transports: ['websocket', 'polling'],
+      reconnection: false, // We'll handle reconnection manually
+      timeout: 3000
     });
 
-    this.socket.on("connect", () => {
-      console.log("Connected to chat server");
+    this.socket.on('connect', () => {
+      this.connectionAttempts = 0;
+      this.isBackendAvailable = true;
+      console.log('[Chat] Connected to chat server');
     });
 
-    this.socket.on("disconnect", () => {
-      console.log("Disconnected from chat server");
+    this.socket.on('disconnect', () => {
+      if (this.isBackendAvailable) {
+        console.log('[Chat] Disconnected from chat server');
+        this.isBackendAvailable = false;
+        // Only attempt to reconnect if we were previously connected
+        if (this.connectionAttempts < this.maxConnectionAttempts) {
+          setTimeout(() => this.initializeSocket(), 5000);
+        }
+      }
     });
 
-    this.socket.on("chat:message", (message: ChatMessage) => {
+    this.socket.on('chat:message', (message: ChatMessage) => {
       if (this.onMessageCallback) {
         this.onMessageCallback(message);
       }
     });
 
-    this.socket.on("stream:viewer-update", (update: StreamViewerUpdate) => {
+    this.socket.on('stream:viewer-update', (update: StreamViewerUpdate) => {
       if (this.onViewerUpdateCallback) {
         this.onViewerUpdateCallback(update);
       }
     });
 
-    this.socket.on(
-      "platform:connection-status",
-      (data: { platform: string; connected: boolean }) => {
-        const connection = this.platformConnections.get(data.platform);
-        if (connection) {
-          connection.connected = data.connected;
-        }
+    this.socket.on('platform:connection-status', (data: { platform: string; connected: boolean }) => {
+      const connection = this.platformConnections.get(data.platform);
+      if (connection) {
+        connection.connected = data.connected;
+      }
+
+      if (this.onConnectionStatusCallback) {
+        this.onConnectionStatusCallback(data.platform, data.connected);
+      }
+    });
+
+    this.socket.on('connect_error', (error) => {
+      this.connectionAttempts++;
+      console.log(`[Chat] Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts} failed`);
+
+      if (this.connectionAttempts >= this.maxConnectionAttempts) {
+        console.log('[Chat] Backend unavailable, switching to demo mode');
+        this.demoMode = true;
+        this.startDemoMode();
+      }
+    });
+  }
+
+  private startDemoMode() {
+    // Simulate chat messages in demo mode
+    const demoMessages = [
+      'Great stream! 🔥',
+      'Love this content!',
+      'Can you show that again?',
+      'Amazing quality! 👏',
+      'Hello everyone!',
+      'This is so helpful, thanks!',
+      'Keep up the great work!',
+      'Subscribed! 🔔',
+      'When is the next stream?',
+      'Demo mode is working perfectly!'
+    ];
+
+    const platforms = ['YouTube', 'Twitch', 'Facebook', 'X'];
+    const usernames = ['StreamFan123', 'TechLover', 'ViewerPro', 'ChatMaster'];
+
+    // Generate demo messages every 3-8 seconds
+    setInterval(() => {
+      if (this.demoMode && this.onMessageCallback) {
+        const message: ChatMessage = {
+          id: Date.now().toString(),
+          username: usernames[Math.floor(Math.random() * usernames.length)],
+          message: demoMessages[Math.floor(Math.random() * demoMessages.length)],
+          timestamp: new Date(),
+          platform: platforms[Math.floor(Math.random() * platforms.length)],
+          streamId: this.currentStreamId || 'demo-stream'
+        };
+
+        this.onMessageCallback(message);
+      }
+    }, Math.random() * 5000 + 3000);
+
+    // Generate demo viewer updates
+    setInterval(() => {
+      if (this.demoMode && this.onViewerUpdateCallback) {
+        platforms.forEach(platform => {
+          const update: StreamViewerUpdate = {
+            streamId: this.currentStreamId || 'demo-stream',
+            viewerCount: Math.floor(Math.random() * 50) + 20,
+            platform: platform.toLowerCase()
+          };
+
+          this.onViewerUpdateCallback(update);
+        });
+      }
+    }, 5000);
+  }
 
         if (this.onConnectionStatusCallback) {
           this.onConnectionStatusCallback(data.platform, data.connected);

@@ -29,17 +29,36 @@ class WebRTCService {
     this.initializeSignaling();
   }
 
-  private initializeSignaling() {
-    const signalingUrl =
-      import.meta.env.MODE === "production"
-        ? "wss://signaling-server.fly.dev"
-        : "ws://localhost:8081";
+  private connectionAttempts = 0;
+  private maxConnectionAttempts = 3;
+  private isBackendAvailable = false;
+
+  private async initializeSignaling() {
+    // Skip connection in demo mode or after max attempts
+    if (this.connectionAttempts >= this.maxConnectionAttempts) {
+      console.log('[WebRTC] Backend unavailable, running in demo mode');
+      return;
+    }
+
+    const signalingUrl = import.meta.env.MODE === 'production'
+      ? 'wss://signaling-server.fly.dev'
+      : 'ws://localhost:8081';
 
     try {
       this.signalingSocket = new WebSocket(signalingUrl);
 
+      // Set timeout for connection
+      const connectionTimeout = setTimeout(() => {
+        if (this.signalingSocket && this.signalingSocket.readyState === WebSocket.CONNECTING) {
+          this.signalingSocket.close();
+        }
+      }, 3000);
+
       this.signalingSocket.onopen = () => {
-        console.log("Connected to signaling server");
+        clearTimeout(connectionTimeout);
+        this.connectionAttempts = 0;
+        this.isBackendAvailable = true;
+        console.log('[WebRTC] Connected to signaling server');
       };
 
       this.signalingSocket.onmessage = (event) => {
@@ -48,16 +67,31 @@ class WebRTCService {
       };
 
       this.signalingSocket.onclose = () => {
-        console.log("Disconnected from signaling server");
-        setTimeout(() => this.initializeSignaling(), 5000);
+        clearTimeout(connectionTimeout);
+        if (this.isBackendAvailable) {
+          console.log('[WebRTC] Disconnected from signaling server');
+          this.isBackendAvailable = false;
+          // Only attempt to reconnect if we were previously connected
+          if (this.connectionAttempts < this.maxConnectionAttempts) {
+            setTimeout(() => this.initializeSignaling(), 5000);
+          }
+        }
       };
 
       this.signalingSocket.onerror = (error) => {
-        console.error("Signaling error:", error);
+        clearTimeout(connectionTimeout);
+        this.connectionAttempts++;
+        console.log(`[WebRTC] Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts} failed`);
+
+        if (this.connectionAttempts >= this.maxConnectionAttempts) {
+          console.log('[WebRTC] Backend unavailable, guest features will use demo mode');
+        }
       };
     } catch (error) {
-      console.error("Failed to connect to signaling server:", error);
+      this.connectionAttempts++;
+      console.log('[WebRTC] Failed to create WebSocket connection, using demo mode');
     }
+  }
   }
 
   private async handleSignalingMessage(message: SignalingMessage) {

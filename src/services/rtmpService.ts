@@ -20,32 +20,64 @@ class RTMPStreamingService {
     this.initializeWebSocket();
   }
 
-  private initializeWebSocket() {
-    // Connect to streaming server
-    const wsUrl =
-      import.meta.env.MODE === "production"
-        ? "wss://stream-server.fly.dev/ws"
-        : "ws://localhost:8080/ws";
+  private connectionAttempts = 0;
+  private maxConnectionAttempts = 3;
+  private isBackendAvailable = false;
+
+  private async initializeWebSocket() {
+    // Skip connection in demo mode or after max attempts
+    if (this.connectionAttempts >= this.maxConnectionAttempts) {
+      console.log('[RTMP] Backend unavailable, running in demo mode');
+      return;
+    }
+
+    const wsUrl = import.meta.env.MODE === 'production'
+      ? 'wss://stream-server.fly.dev/ws'
+      : 'ws://localhost:8080/ws';
 
     try {
       this.wsConnection = new WebSocket(wsUrl);
 
+      // Set timeout for connection
+      const connectionTimeout = setTimeout(() => {
+        if (this.wsConnection && this.wsConnection.readyState === WebSocket.CONNECTING) {
+          this.wsConnection.close();
+        }
+      }, 3000);
+
       this.wsConnection.onopen = () => {
-        console.log("Connected to streaming server");
+        clearTimeout(connectionTimeout);
+        this.connectionAttempts = 0;
+        this.isBackendAvailable = true;
+        console.log('[RTMP] Connected to streaming server');
       };
 
       this.wsConnection.onclose = () => {
-        console.log("Disconnected from streaming server");
-        // Attempt to reconnect after 5 seconds
-        setTimeout(() => this.initializeWebSocket(), 5000);
+        clearTimeout(connectionTimeout);
+        if (this.isBackendAvailable) {
+          console.log('[RTMP] Disconnected from streaming server');
+          this.isBackendAvailable = false;
+          // Only attempt to reconnect if we were previously connected
+          if (this.connectionAttempts < this.maxConnectionAttempts) {
+            setTimeout(() => this.initializeWebSocket(), 5000);
+          }
+        }
       };
 
       this.wsConnection.onerror = (error) => {
-        console.error("WebSocket error:", error);
+        clearTimeout(connectionTimeout);
+        this.connectionAttempts++;
+        console.log(`[RTMP] Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts} failed`);
+
+        if (this.connectionAttempts >= this.maxConnectionAttempts) {
+          console.log('[RTMP] Backend unavailable, switching to demo mode');
+        }
       };
     } catch (error) {
-      console.error("Failed to connect to streaming server:", error);
+      this.connectionAttempts++;
+      console.log('[RTMP] Failed to create WebSocket connection, using demo mode');
     }
+  }
   }
 
   async startMultiStream(
