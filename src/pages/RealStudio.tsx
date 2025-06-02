@@ -9,6 +9,7 @@ import { PlatformManager } from "@/components/streaming/PlatformManager";
 import { LiveChat } from "@/components/streaming/LiveChat";
 import { GuestManager } from "@/components/streaming/GuestManager";
 import { MediaPermissionError } from "@/components/streaming/MediaPermissionError";
+import { QuickFix } from "@/components/streaming/QuickFix";
 import { StreamAnalytics } from "@/components/streaming/StreamAnalytics";
 import { StreamScheduler } from "@/components/streaming/StreamScheduler";
 import { StreamOverlays } from "@/components/streaming/StreamOverlays";
@@ -183,20 +184,57 @@ const RealStudio: React.FC = () => {
   };
 
   if (webRTCError) {
+    // Try to parse error to see if it's a permission issue
+    let isPermissionError = false;
+    try {
+      const errorDetails = JSON.parse(webRTCError);
+      isPermissionError = errorDetails.type === "permission";
+    } catch {
+      isPermissionError =
+        webRTCError.includes("Permission denied") ||
+        webRTCError.includes("NotAllowedError");
+    }
+
     return (
       <div className="container mx-auto py-8 max-w-4xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-2">Camera Setup Required</h1>
+          <h1 className="text-2xl font-bold mb-2">
+            {isPermissionError
+              ? "Camera Permission Required"
+              : "Camera Setup Required"}
+          </h1>
           <p className="text-muted-foreground">
-            We need access to your camera and microphone to start streaming.
-            Let's get this fixed!
+            {isPermissionError
+              ? "We need permission to access your camera and microphone for streaming."
+              : "We need access to your camera and microphone to start streaming. Let's get this fixed!"}
           </p>
         </div>
-        <MediaPermissionError
-          error={webRTCError}
-          onRetry={initializeMedia}
-          permissionState={permissionState}
-        />
+
+        {isPermissionError ? (
+          <div className="space-y-6">
+            <QuickFix onRetry={initializeMedia} />
+            <details className="group">
+              <summary className="cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <span className="font-medium">
+                  Need more help? Click here for detailed troubleshooting
+                </span>
+              </summary>
+              <div className="mt-4">
+                <MediaPermissionError
+                  error={webRTCError}
+                  onRetry={initializeMedia}
+                  permissionState={permissionState}
+                />
+              </div>
+            </details>
+          </div>
+        ) : (
+          <MediaPermissionError
+            error={webRTCError}
+            onRetry={initializeMedia}
+            permissionState={permissionState}
+          />
+        )}
       </div>
     );
   }
