@@ -48,6 +48,19 @@ export interface StreamOverlay {
   position: { x: number; y: number };
   size: { width: number; height: number };
   visible: boolean;
+  textStyle?: {
+    fontSize: number;
+    color: string;
+    fontWeight: string;
+    textShadow: string;
+    fontFamily?: string;
+  };
+  imageStyle?: {
+    opacity: number;
+    borderRadius: number;
+    border?: string;
+  };
+  visible: boolean;
 }
 
 export interface WebRTCConnection {
