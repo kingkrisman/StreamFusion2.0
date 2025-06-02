@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { VideoDebugger } from "./VideoDebugger";
 import {
   Camera,
   CameraOff,
@@ -13,6 +15,8 @@ import {
   Settings,
   Maximize,
   PictureInPicture,
+  AlertTriangle,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Guest } from "@/types/streaming";
@@ -28,6 +32,8 @@ interface EnhancedVideoCaptureProps {
   onToggleScreenShare: () => void;
   guests: Guest[];
   className?: string;
+  localStream?: MediaStream | null;
+  onRetryCamera?: () => void;
 }
 
 export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
@@ -41,10 +47,66 @@ export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
   onToggleScreenShare,
   guests,
   className,
+  localStream,
+  onRetryCamera,
 }) => {
   const [viewMode, setViewMode] = React.useState<"camera" | "screen" | "pip">(
     "camera",
   );
+  const [showDebugger, setShowDebugger] = useState(false);
+  const [videoIssueDetected, setVideoIssueDetected] = useState(false);
+
+  // Monitor video element for black screen or issues
+  useEffect(() => {
+    if (!localVideoRef.current || !localStream) return;
+
+    const video = localVideoRef.current;
+    let checkInterval: NodeJS.Timeout;
+
+    const checkVideoStatus = () => {
+      const hasVideoTracks = localStream.getVideoTracks().length > 0;
+      const isVideoReady = video.readyState >= 2;
+      const isVideoPlaying =
+        !video.paused && !video.ended && video.currentTime > 0;
+      const hasValidDimensions = video.videoWidth > 0 && video.videoHeight > 0;
+
+      const hasIssue =
+        hasVideoTracks &&
+        isVideoEnabled &&
+        (!isVideoReady || !isVideoPlaying || !hasValidDimensions);
+
+      if (hasIssue !== videoIssueDetected) {
+        setVideoIssueDetected(hasIssue);
+        if (hasIssue) {
+          console.warn("Video issue detected:", {
+            hasVideoTracks,
+            isVideoEnabled,
+            isVideoReady,
+            isVideoPlaying,
+            hasValidDimensions,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            readyState: video.readyState,
+          });
+        }
+      }
+    };
+
+    // Check immediately and then every 2 seconds
+    checkVideoStatus();
+    checkInterval = setInterval(checkVideoStatus, 2000);
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+    };
+  }, [localStream, isVideoEnabled, videoIssueDetected, localVideoRef]);
+
+  const handleVideoClick = () => {
+    // Try to play video on user interaction (for autoplay restrictions)
+    if (localVideoRef.current) {
+      localVideoRef.current.play().catch(console.error);
+    }
+  };
 
   const switchViewMode = () => {
     if (isScreenSharing) {
@@ -63,16 +125,52 @@ export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
         <div className="aspect-video relative">
           {/* Camera view */}
           {(viewMode === "camera" || !isScreenSharing) && (
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className={cn(
-                "w-full h-full object-cover",
-                !isVideoEnabled && "opacity-0",
+            <div className="relative w-full h-full">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                muted
+                playsInline
+                onClick={handleVideoClick}
+                className={cn(
+                  "w-full h-full object-cover cursor-pointer",
+                  !isVideoEnabled && "opacity-0",
+                )}
+              />
+
+              {/* Video issue overlay */}
+              {videoIssueDetected && isVideoEnabled && (
+                <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center">
+                  <div className="text-center text-white p-4">
+                    <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-yellow-400" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      Camera Issue Detected
+                    </h3>
+                    <p className="text-sm mb-4">
+                      Your camera appears to be connected but not displaying
+                      video.
+                    </p>
+                    <div className="space-y-2">
+                      <Button
+                        size="sm"
+                        onClick={handleVideoClick}
+                        className="mr-2"
+                      >
+                        Click to Play
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowDebugger(true)}
+                      >
+                        <Wrench className="w-4 h-4 mr-1" />
+                        Debug
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               )}
-            />
+            </div>
           )}
 
           {/* Screen share view */}
