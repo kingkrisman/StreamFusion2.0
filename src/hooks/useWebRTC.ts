@@ -79,6 +79,20 @@ export const useWebRTC = () => {
       };
     }
 
+    if (error.message === "CAMERA_NO_VIDEO_TRACKS") {
+      return {
+        type: "hardware",
+        message:
+          "Camera is connected but not producing video. This could be a hardware issue.",
+        instructions: [
+          "Check if your camera has a physical privacy cover",
+          "Make sure your camera isn't being used by another application",
+          "Try unplugging and reconnecting your camera",
+          "Check camera settings in your system preferences",
+        ],
+      };
+    }
+
     if (error.name === "NotFoundError") {
       return {
         type: "hardware",
@@ -226,30 +240,121 @@ export const useWebRTC = () => {
         }
       }
 
+      // Validate stream before setting it
+      console.log("Stream received:", {
+        active: stream.active,
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length,
+        settings: stream.getVideoTracks()[0]?.getSettings(),
+      });
+
+      // Check if stream has video tracks
+      if (stream.getVideoTracks().length === 0) {
+        console.warn("Stream has no video tracks");
+        throw new Error("CAMERA_NO_VIDEO_TRACKS");
+      }
+
       setLocalStream(stream);
       setPermissionState("granted");
 
-      // Ensure video element is properly set up
+      // Ensure video element is properly set up with enhanced error handling
       if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-        localVideoRef.current.muted = true; // Prevent audio feedback
-        localVideoRef.current.playsInline = true; // Better mobile support
+        const video = localVideoRef.current;
 
-        // Handle video loading with error handling
-        localVideoRef.current.onloadedmetadata = () => {
-          localVideoRef.current?.play().catch((playError) => {
+        // Clear any existing source first
+        video.srcObject = null;
+
+        // Set up event handlers before setting the stream
+        video.onloadedmetadata = () => {
+          console.log("Video metadata loaded:", {
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            duration: video.duration,
+            readyState: video.readyState,
+          });
+
+          video.play().catch((playError) => {
             console.warn("Video play failed:", playError);
-            // Try playing again after a short delay
+            // Try multiple recovery strategies
             setTimeout(() => {
-              localVideoRef.current?.play().catch(console.error);
+              if (video.paused) {
+                video.play().catch((retryError) => {
+                  console.error("Video retry failed:", retryError);
+                  // Last resort: trigger user interaction
+                  setError(
+                    JSON.stringify({
+                      type: "playback",
+                      message: "Video playback failed. Please click to start.",
+                      instructions: [
+                        "Click the video area to start playback",
+                        "Check if browser allows autoplay",
+                      ],
+                    }),
+                  );
+                });
+              }
             }, 1000);
           });
         };
 
-        // Add error handler for video element
-        localVideoRef.current.onerror = (videoError) => {
-          console.error("Video element error:", videoError);
+        video.onloadstart = () => {
+          console.log("Video load started");
         };
+
+        video.oncanplay = () => {
+          console.log("Video can play");
+        };
+
+        video.onplaying = () => {
+          console.log("Video is playing");
+        };
+
+        video.onerror = (videoError) => {
+          console.error("Video element error:", videoError);
+          const error = video.error;
+          if (error) {
+            console.error("Video error details:", {
+              code: error.code,
+              message: error.message,
+            });
+          }
+        };
+
+        video.onstalled = () => {
+          console.warn("Video playback stalled");
+        };
+
+        video.onsuspend = () => {
+          console.warn("Video loading suspended");
+        };
+
+        // Set video properties
+        video.muted = true; // Prevent audio feedback
+        video.playsInline = true; // Better mobile support
+        video.autoplay = true; // Autoplay for better UX
+
+        // Now set the stream
+        video.srcObject = stream;
+
+        // Force load if needed
+        video.load();
+
+        // Additional check after a delay
+        setTimeout(() => {
+          if (video.readyState < 2) {
+            console.warn(
+              "Video not ready after 3 seconds, current state:",
+              video.readyState,
+            );
+            // Try reloading
+            video.load();
+          }
+
+          if (video.paused) {
+            console.warn("Video is paused, attempting to play");
+            video.play().catch(console.error);
+          }
+        }, 3000);
       }
 
       console.log("Media initialization successful");
