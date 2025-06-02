@@ -12,6 +12,8 @@ import { MediaPermissionError } from "@/components/streaming/MediaPermissionErro
 import { StreamAnalytics } from "@/components/streaming/StreamAnalytics";
 import { StreamScheduler } from "@/components/streaming/StreamScheduler";
 import { StreamOverlays } from "@/components/streaming/StreamOverlays";
+import { DemoNotification } from "@/components/DemoNotification";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useRealStream } from "@/hooks/useRealStream";
 import { useChat } from "@/hooks/useChat";
