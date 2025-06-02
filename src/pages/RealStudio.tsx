@@ -11,6 +11,7 @@ import { GuestManager } from "@/components/streaming/GuestManager";
 import { MediaPermissionError } from "@/components/streaming/MediaPermissionError";
 import { QuickFix } from "@/components/streaming/QuickFix";
 import { PermissionManager } from "@/components/streaming/PermissionManager";
+import { PermissionFixer } from "@/components/streaming/PermissionFixer";
 import { StreamAnalytics } from "@/components/streaming/StreamAnalytics";
 import { StreamScheduler } from "@/components/streaming/StreamScheduler";
 import { StreamOverlays } from "@/components/streaming/StreamOverlays";
@@ -213,15 +214,26 @@ const RealStudio: React.FC = () => {
 
         {isPermissionError ? (
           <div className="space-y-6">
-            <PermissionManager
-              onRetry={initializeMedia}
-              onPermissionGranted={initializeMedia}
-            />
+            <PermissionFixer onRetry={initializeMedia} />
 
             <details className="group">
               <summary className="cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <span className="font-medium">
-                  Still having issues? Click here for quick fixes
+                  Advanced Permission Management
+                </span>
+              </summary>
+              <div className="mt-4 space-y-4">
+                <PermissionManager
+                  onRetry={initializeMedia}
+                  onPermissionGranted={initializeMedia}
+                />
+              </div>
+            </details>
+
+            <details className="group">
+              <summary className="cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <span className="font-medium">
+                  Quick Fixes & Troubleshooting
                 </span>
               </summary>
               <div className="mt-4 space-y-4">
@@ -232,7 +244,7 @@ const RealStudio: React.FC = () => {
             <details className="group">
               <summary className="cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <span className="font-medium">
-                  Advanced troubleshooting and browser-specific help
+                  Comprehensive Browser-Specific Help
                 </span>
               </summary>
               <div className="mt-4">
