@@ -252,7 +252,7 @@ export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
 
           <Button
             size="sm"
-            variant={isScreenSharing ? "default" : "outline"}
+            variant={isScreenSharing ? "secondary" : "outline"}
             onClick={onToggleScreenShare}
             className="rounded-full w-10 h-10 p-0"
           >
@@ -270,143 +270,143 @@ export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
               onClick={switchViewMode}
               className="rounded-full w-10 h-10 p-0"
             >
-              {viewMode === "pip" ? (
-                <Maximize className="w-4 h-4" />
-              ) : (
-                <PictureInPicture className="w-4 h-4" />
-              )}
+              <PictureInPicture className="w-4 h-4" />
             </Button>
-          )}
-
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full w-10 h-10 p-0"
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Status indicators */}
-        <div className="absolute top-4 left-4 flex gap-2">
-          <Badge className="bg-blue-600 text-white">You (Host)</Badge>
-          {isScreenSharing && (
-            <Badge className="bg-green-600 text-white">
-              <Monitor className="w-3 h-3 mr-1" />
-              Screen Sharing
-            </Badge>
           )}
         </div>
 
         {/* View mode indicator */}
         {isScreenSharing && (
+          <div className="absolute top-4 left-4">
+            <Badge variant="secondary">
+              {viewMode === "camera" && "Camera View"}
+              {viewMode === "screen" && "Screen Share"}
+              {viewMode === "pip" && "Picture in Picture"}
+            </Badge>
+          </div>
+        )}
+
+        {/* Guest count indicator */}
+        {guests.length > 0 && (
           <div className="absolute top-4 right-4">
             <Badge
               variant="outline"
-              className="bg-black/50 text-white border-white"
+              className="bg-black/50 text-white border-white/20"
             >
-              {viewMode === "camera" && "Camera View"}
-              {viewMode === "screen" && "Screen View"}
-              {viewMode === "pip" && "Picture-in-Picture"}
+              <Users className="w-3 h-3 mr-1" />
+              {guests.length}
             </Badge>
           </div>
         )}
       </Card>
 
-      {/* Guest videos */}
-      {guests.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <Users className="w-4 h-4" />
-            Guests ({guests.length})
-          </div>
-
-          <div
-            className="grid gap-2"
-            style={{
-              gridTemplateColumns:
-                guests.length === 1
-                  ? "1fr"
-                  : guests.length === 2
-                    ? "repeat(2, 1fr)"
-                    : "repeat(3, 1fr)",
-            }}
+      {/* Advanced controls */}
+      <div className="flex gap-2 flex-wrap">
+        <Button variant="outline" size="sm">
+          <Settings className="w-4 h-4 mr-2" />
+          Settings
+        </Button>
+        <Button variant="outline" size="sm">
+          <Maximize className="w-4 h-4 mr-2" />
+          Fullscreen
+        </Button>
+        {videoIssueDetected && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDebugger(!showDebugger)}
           >
-            {guests.map((guest) => (
-              <Card
-                key={guest.id}
-                className="relative overflow-hidden bg-black"
-              >
-                <div className="aspect-video">
-                  {guest.stream ? (
-                    <video
-                      autoPlay
-                      playsInline
-                      className={cn(
-                        "w-full h-full object-cover",
-                        guest.isVideoOff && "opacity-0",
-                      )}
-                      ref={(video) => {
-                        if (video && guest.stream) {
-                          video.srcObject = guest.stream;
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                      <div className="text-center text-gray-400">
-                        <Users className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">Connecting...</p>
+            <Wrench className="w-4 h-4 mr-2" />
+            Debug Camera
+          </Button>
+        )}
+      </div>
+
+      {/* Guest videos grid */}
+      {guests.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          {guests.map((guest) => (
+            <Card key={guest.id} className="relative overflow-hidden bg-black">
+              <div className="aspect-video relative">
+                {guest.stream && guest.isConnected && !guest.isVideoOff ? (
+                  <video
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                    ref={(videoElement) => {
+                      if (videoElement && guest.stream) {
+                        videoElement.srcObject = guest.stream;
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                    <div className="text-center text-white">
+                      <CameraOff className="w-8 h-8 mx-auto mb-2" />
+                      <div className="text-sm">{guest.name}</div>
+                      <div className="text-xs text-gray-400">
+                        {!guest.isConnected
+                          ? "Disconnected"
+                          : guest.isVideoOff
+                            ? "Video Off"
+                            : "Connecting..."}
                       </div>
-                    </div>
-                  )}
-
-                  {guest.isVideoOff && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                      <CameraOff className="w-8 h-8 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Guest info */}
-                <div className="absolute top-2 left-2">
-                  <Badge className="bg-green-600 text-white text-xs">
-                    {guest.name}
-                  </Badge>
-                </div>
-
-                {/* Audio indicator */}
-                {guest.isMuted && (
-                  <div className="absolute top-2 right-2">
-                    <div className="bg-red-600 text-white p-1 rounded">
-                      <MicOff className="w-3 h-3" />
                     </div>
                   </div>
                 )}
 
-                {/* Connection status */}
-                <div
-                  className={cn(
-                    "absolute bottom-2 right-2 w-2 h-2 rounded-full",
-                    guest.isConnected ? "bg-green-500" : "bg-red-500",
+                {/* Guest controls */}
+                <div className="absolute top-2 left-2 flex gap-1">
+                  <Badge variant="secondary" className="text-xs">
+                    {guest.name}
+                  </Badge>
+                  {guest.isMuted && (
+                    <Badge variant="destructive" className="text-xs">
+                      <MicOff className="w-3 h-3" />
+                    </Badge>
                   )}
-                />
-              </Card>
-            ))}
-          </div>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
 
-      {/* Quick tips */}
-      <div className="text-xs text-muted-foreground text-center space-y-1">
-        <p>💡 Click the monitor icon to share your screen</p>
-        {isScreenSharing && (
-          <p>
-            🔄 Click the view mode button to switch between camera and screen
-            views
-          </p>
-        )}
-      </div>
+      {/* Camera Issues Alert */}
+      {videoIssueDetected && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Camera connection detected but video is not displaying properly.
+            <Button
+              variant="link"
+              className="p-0 h-auto ml-2"
+              onClick={() => setShowDebugger(true)}
+            >
+              Click here to diagnose the issue
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Debug Panel */}
+      {showDebugger && (
+        <div className="mt-4">
+          <VideoDebugger
+            stream={localStream || null}
+            videoRef={localVideoRef}
+            onRetry={onRetryCamera || (() => window.location.reload())}
+          />
+          <Button
+            variant="outline"
+            className="mt-3"
+            onClick={() => setShowDebugger(false)}
+          >
+            Hide Diagnostics
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
