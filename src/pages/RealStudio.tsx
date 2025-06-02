@@ -329,6 +329,9 @@ const RealStudio: React.FC = () => {
               guests={streamState.guests}
               localStream={localStream}
               onRetryCamera={initializeMedia}
+              overlays={overlays}
+              onUpdateOverlay={handleUpdateOverlay}
+              onDeleteOverlay={handleDeleteOverlay}
             />
 
             {/* Stream Controls */}
