@@ -16,7 +16,10 @@ export const useWebRTC = () => {
 
   const checkPermissions = useCallback(async () => {
     try {
+      console.log("Checking media device permissions...");
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error("MediaDevices API not supported");
         throw new Error("MEDIA_NOT_SUPPORTED");
       }
 
@@ -24,17 +27,25 @@ export const useWebRTC = () => {
       const isSecureContext =
         window.isSecureContext || window.location.hostname === "localhost";
       if (!isSecureContext) {
+        console.error("Insecure context detected:", window.location.protocol);
         throw new Error("INSECURE_CONTEXT");
       }
+
+      console.log("Security context OK, checking permissions...");
 
       // Try to get permission status if available
       if (navigator.permissions) {
         try {
-          const cameraPermission = await navigator.permissions.query({
-            name: "camera" as PermissionName,
-          });
-          const micPermission = await navigator.permissions.query({
-            name: "microphone" as PermissionName,
+          const [cameraPermission, micPermission] = await Promise.all([
+            navigator.permissions.query({ name: "camera" as PermissionName }),
+            navigator.permissions.query({
+              name: "microphone" as PermissionName,
+            }),
+          ]);
+
+          console.log("Permission states:", {
+            camera: cameraPermission.state,
+            microphone: micPermission.state,
           });
 
           if (
@@ -42,21 +53,31 @@ export const useWebRTC = () => {
             micPermission.state === "denied"
           ) {
             setPermissionState("denied");
+            console.error("Permissions explicitly denied");
             throw new Error("PERMISSION_DENIED");
           } else if (
             cameraPermission.state === "granted" &&
             micPermission.state === "granted"
           ) {
             setPermissionState("granted");
+            console.log("Permissions already granted");
+          } else {
+            setPermissionState("prompt");
+            console.log("Permissions need to be requested");
           }
         } catch (permErr) {
           // Permission API might not support camera/microphone queries in all browsers
           console.log("Permission API query failed:", permErr);
+          setPermissionState("prompt");
         }
+      } else {
+        console.log("Permission API not available, will request directly");
+        setPermissionState("prompt");
       }
 
       return true;
     } catch (err) {
+      console.error("Permission check failed:", err);
       throw err;
     }
   }, []);
@@ -153,15 +174,18 @@ export const useWebRTC = () => {
   };
 
   const initializeMedia = useCallback(async () => {
+    console.log("Initializing media...");
     setIsInitializing(true);
     setError(null);
 
     try {
       // First check if mediaDevices is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error("getUserMedia not supported");
         throw new Error("MEDIA_NOT_SUPPORTED");
       }
 
+      console.log("MediaDevices API available");
       await checkPermissions();
 
       // Try with fallback constraints for better compatibility
@@ -182,9 +206,34 @@ export const useWebRTC = () => {
       let attempt = 1;
       const maxAttempts = 3;
 
+      // If permissions are in prompt state, try a simple request first to trigger permission dialog
+      if (permissionState === "prompt") {
+        console.log(
+          "Permissions need to be requested, trying simple constraints first...",
+        );
+        try {
+          const simpleStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+          console.log("Simple permission request successful");
+          // Stop the simple stream and continue with preferred constraints
+          simpleStream.getTracks().forEach((track) => track.stop());
+          setPermissionState("granted");
+        } catch (simpleError) {
+          console.error("Simple permission request failed:", simpleError);
+          if (simpleError.name === "NotAllowedError") {
+            setPermissionState("denied");
+            throw simpleError;
+          }
+          // Continue with fallback logic for other errors
+        }
+      }
+
       try {
         console.log(`Attempt ${attempt}: Requesting high resolution media`);
         stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("High resolution stream successful");
       } catch (highResError) {
         attempt++;
         console.warn(
