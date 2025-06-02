@@ -299,6 +299,8 @@ const RealStudio: React.FC = () => {
               onToggleAudio={toggleAudio}
               onToggleScreenShare={handleToggleScreenShare}
               guests={streamState.guests}
+              localStream={localStream}
+              onRetryCamera={initializeMedia}
             />
 
             {/* Stream Controls */}
