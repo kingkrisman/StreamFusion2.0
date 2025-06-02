@@ -45,7 +45,7 @@ const Index = () => {
     { name: "YouTube", icon: Youtube, color: "text-red-600" },
     { name: "Twitch", icon: Twitch, color: "text-purple-600" },
     { name: "Facebook", icon: Facebook, color: "text-blue-600" },
-    { name: "X", icon: Twitter, color: "text-black" },
+    { name: "Twitter", icon: Twitter, color: "text-black" },
   ];
 
   return (
