@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VideoDebugger } from "./VideoDebugger";
+import { StreamOverlayRenderer } from "./StreamOverlayRenderer";
 import {
   Camera,
   CameraOff,
@@ -17,9 +18,10 @@ import {
   PictureInPicture,
   AlertTriangle,
   Wrench,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Guest } from "@/types/streaming";
+import { Guest, StreamOverlay } from "@/types/streaming";
 
 interface EnhancedVideoCaptureProps {
   localVideoRef: React.RefObject<HTMLVideoElement>;
@@ -34,6 +36,9 @@ interface EnhancedVideoCaptureProps {
   className?: string;
   localStream?: MediaStream | null;
   onRetryCamera?: () => void;
+  overlays?: StreamOverlay[];
+  onUpdateOverlay?: (id: string, updates: Partial<StreamOverlay>) => void;
+  onDeleteOverlay?: (id: string) => void;
 }
 
 export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
@@ -49,12 +54,17 @@ export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
   className,
   localStream,
   onRetryCamera,
+  overlays = [],
+  onUpdateOverlay,
+  onDeleteOverlay,
 }) => {
   const [viewMode, setViewMode] = React.useState<"camera" | "screen" | "pip">(
     "camera",
   );
   const [showDebugger, setShowDebugger] = useState(false);
   const [videoIssueDetected, setVideoIssueDetected] = useState(false);
+  const [overlayEditMode, setOverlayEditMode] = useState(false);
+  const videoContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Monitor video element for black screen or issues
   useEffect(() => {
@@ -122,7 +132,7 @@ export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
     <div className={cn("space-y-4", className)}>
       {/* Main video area */}
       <Card className="relative overflow-hidden bg-black">
-        <div className="aspect-video relative">
+        <div ref={videoContainerRef} className="aspect-video relative">
           {/* Camera view */}
           {(viewMode === "camera" || !isScreenSharing) && (
             <div className="relative w-full h-full">
@@ -298,6 +308,32 @@ export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
             </Badge>
           </div>
         )}
+
+        {/* Overlay edit mode toggle */}
+        {overlays.length > 0 && onUpdateOverlay && onDeleteOverlay && (
+          <div className="absolute top-4 right-20">
+            <Button
+              variant={overlayEditMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setOverlayEditMode(!overlayEditMode)}
+              className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+            >
+              <Layers className="w-3 h-3 mr-1" />
+              {overlayEditMode ? "Done" : "Edit"}
+            </Button>
+          </div>
+        )}
+
+        {/* Stream Overlay Renderer */}
+        {overlays.length > 0 && onUpdateOverlay && onDeleteOverlay && (
+          <StreamOverlayRenderer
+            overlays={overlays}
+            onUpdateOverlay={onUpdateOverlay}
+            onDeleteOverlay={onDeleteOverlay}
+            editMode={overlayEditMode}
+            containerRef={videoContainerRef}
+          />
+        )}
       </Card>
 
       {/* Advanced controls */}
@@ -318,6 +354,16 @@ export const EnhancedVideoCapture: React.FC<EnhancedVideoCaptureProps> = ({
           >
             <Wrench className="w-4 h-4 mr-2" />
             Debug Camera
+          </Button>
+        )}
+        {overlays.length > 0 && (
+          <Button
+            variant={overlayEditMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOverlayEditMode(!overlayEditMode)}
+          >
+            <Layers className="w-4 h-4 mr-2" />
+            {overlayEditMode ? "Exit Edit" : "Edit Overlays"}
           </Button>
         )}
       </div>
