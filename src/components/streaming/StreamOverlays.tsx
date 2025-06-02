@@ -78,6 +78,12 @@ export const StreamOverlays: React.FC<StreamOverlaysProps> = ({
         height: textSize[0] * 1.2,
       },
       visible: true,
+      textStyle: {
+        fontSize: textSize[0],
+        color: textColor,
+        fontWeight: "normal",
+        textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+      },
     });
 
     setTextContent("");
@@ -191,6 +197,34 @@ export const StreamOverlays: React.FC<StreamOverlaysProps> = ({
                     </div>
                   </div>
 
+                  {/* Preview */}
+                  {logoFile && (
+                    <div className="p-4 bg-black rounded-lg relative overflow-hidden">
+                      <div className="aspect-video relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                          <div className="text-gray-400 text-sm">
+                            Video Preview
+                          </div>
+                        </div>
+                        <div
+                          className="absolute"
+                          style={{
+                            left: `${position.x}%`,
+                            top: `${position.y}%`,
+                            width: `${size.width * 0.3}px`, // Scaled down for preview
+                            height: `${size.height * 0.3}px`,
+                          }}
+                        >
+                          <img
+                            src={URL.createObjectURL(logoFile)}
+                            alt="Logo preview"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     onClick={handleAddLogo}
                     disabled={!logoFile}
@@ -258,6 +292,31 @@ export const StreamOverlays: React.FC<StreamOverlaysProps> = ({
                       />
                     </div>
                   </div>
+
+                  {/* Preview */}
+                  {textContent && (
+                    <div className="p-4 bg-black rounded-lg relative overflow-hidden">
+                      <div className="aspect-video relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                          <div className="text-gray-400 text-sm">
+                            Video Preview
+                          </div>
+                        </div>
+                        <div
+                          className="absolute"
+                          style={{
+                            left: `${position.x}%`,
+                            top: `${position.y}%`,
+                            fontSize: `${textSize[0] * 0.5}px`, // Scaled down for preview
+                            color: textColor,
+                            textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                          }}
+                        >
+                          {textContent}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <Button
                     onClick={handleAddText}
