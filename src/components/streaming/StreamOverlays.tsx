@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OverlayPresets } from "./OverlayPresets";
 import {
   Layers,
   Plus,
@@ -23,6 +24,7 @@ import {
   Move,
   Trash2,
   Upload,
+  Sparkles,
 } from "lucide-react";
 import { StreamOverlay } from "@/types/streaming";
 
@@ -120,11 +122,21 @@ export const StreamOverlays: React.FC<StreamOverlaysProps> = ({
               </DialogHeader>
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="logo">Logo</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="presets">Presets</TabsTrigger>
                   <TabsTrigger value="text">Text</TabsTrigger>
+                  <TabsTrigger value="logo">Logo</TabsTrigger>
                   <TabsTrigger value="image">Image</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="presets" className="space-y-4">
+                  <OverlayPresets
+                    onAddOverlay={(overlay) => {
+                      onAddOverlay(overlay);
+                      setDialogOpen(false);
+                    }}
+                  />
+                </TabsContent>
 
                 <TabsContent value="logo" className="space-y-4">
                   <div>
@@ -341,11 +353,67 @@ export const StreamOverlays: React.FC<StreamOverlaysProps> = ({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Quick Presets */}
+        {overlays.length === 0 && (
+          <div className="mb-6">
+            <h3 className="font-medium mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Quick Start with Presets
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                {
+                  name: "Welcome",
+                  content: "Welcome to the Stream!",
+                  color: "#FFD700",
+                },
+                {
+                  name: "Subscribe",
+                  content: "Don't forget to subscribe!",
+                  color: "#FF6B6B",
+                },
+                { name: "Live", content: "🔴 LIVE", color: "#FF0000" },
+                {
+                  name: "Thanks",
+                  content: "Thanks for watching! ⭐",
+                  color: "#FFD700",
+                },
+              ].map((preset, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onAddOverlay({
+                      type: "text",
+                      content: preset.content,
+                      position: { x: 10 + index * 20, y: 10 + index * 10 },
+                      size: { width: preset.content.length * 15, height: 30 },
+                      visible: true,
+                      textStyle: {
+                        fontSize: 24,
+                        color: preset.color,
+                        fontWeight: "bold",
+                        textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                      },
+                    });
+                  }}
+                  className="justify-start"
+                >
+                  {preset.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {overlays.length === 0 ? (
           <div className="text-center text-muted-foreground py-6">
             <Layers className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p>No overlays added</p>
-            <p className="text-sm">Add logos, text, or images to your stream</p>
+            <p className="text-sm">
+              Use quick presets above or create custom overlays
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
