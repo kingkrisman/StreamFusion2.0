@@ -10,6 +10,7 @@ import { LiveChat } from "@/components/streaming/LiveChat";
 import { GuestManager } from "@/components/streaming/GuestManager";
 import { MediaPermissionError } from "@/components/streaming/MediaPermissionError";
 import { QuickFix } from "@/components/streaming/QuickFix";
+import { PermissionManager } from "@/components/streaming/PermissionManager";
 import { StreamAnalytics } from "@/components/streaming/StreamAnalytics";
 import { StreamScheduler } from "@/components/streaming/StreamScheduler";
 import { StreamOverlays } from "@/components/streaming/StreamOverlays";
@@ -212,11 +213,26 @@ const RealStudio: React.FC = () => {
 
         {isPermissionError ? (
           <div className="space-y-6">
-            <QuickFix onRetry={initializeMedia} />
+            <PermissionManager
+              onRetry={initializeMedia}
+              onPermissionGranted={initializeMedia}
+            />
+
             <details className="group">
               <summary className="cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <span className="font-medium">
-                  Need more help? Click here for detailed troubleshooting
+                  Still having issues? Click here for quick fixes
+                </span>
+              </summary>
+              <div className="mt-4 space-y-4">
+                <QuickFix onRetry={initializeMedia} />
+              </div>
+            </details>
+
+            <details className="group">
+              <summary className="cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <span className="font-medium">
+                  Advanced troubleshooting and browser-specific help
                 </span>
               </summary>
               <div className="mt-4">
