@@ -165,13 +165,19 @@ export const useWebRTC = () => {
       };
 
       let stream;
+      let attempt = 1;
+      const maxAttempts = 3;
+
       try {
+        console.log(`Attempt ${attempt}: Requesting high resolution media`);
         stream = await navigator.mediaDevices.getUserMedia(constraints);
       } catch (highResError) {
+        attempt++;
         console.warn(
-          "High resolution failed, trying lower resolution:",
+          `Attempt ${attempt}: High resolution failed, trying lower resolution:`,
           highResError,
         );
+
         // Fallback to lower resolution
         constraints = {
           video: {
@@ -189,15 +195,34 @@ export const useWebRTC = () => {
         try {
           stream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch (mediumResError) {
+          attempt++;
           console.warn(
-            "Medium resolution failed, trying basic constraints:",
+            `Attempt ${attempt}: Medium resolution failed, trying basic constraints:`,
             mediumResError,
           );
+
           // Final fallback to basic constraints
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-          });
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: true,
+            });
+          } catch (basicError) {
+            // If even basic constraints fail, try video-only as last resort
+            console.warn(
+              "Basic constraints failed, trying video-only:",
+              basicError,
+            );
+            try {
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false,
+              });
+              console.warn("Audio access failed, continuing with video-only");
+            } catch (videoOnlyError) {
+              throw basicError; // Throw the basic error, not video-only
+            }
+          }
         }
       }
 
@@ -210,11 +235,24 @@ export const useWebRTC = () => {
         localVideoRef.current.muted = true; // Prevent audio feedback
         localVideoRef.current.playsInline = true; // Better mobile support
 
-        // Handle video loading
+        // Handle video loading with error handling
         localVideoRef.current.onloadedmetadata = () => {
-          localVideoRef.current?.play().catch(console.error);
+          localVideoRef.current?.play().catch((playError) => {
+            console.warn("Video play failed:", playError);
+            // Try playing again after a short delay
+            setTimeout(() => {
+              localVideoRef.current?.play().catch(console.error);
+            }, 1000);
+          });
+        };
+
+        // Add error handler for video element
+        localVideoRef.current.onerror = (videoError) => {
+          console.error("Video element error:", videoError);
         };
       }
+
+      console.log("Media initialization successful");
     } catch (err) {
       console.error("Error accessing media devices:", err);
       const errorDetails = getDetailedError(err);
