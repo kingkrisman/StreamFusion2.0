@@ -60,13 +60,18 @@ const Index = () => {
             <span className="text-xl font-bold">StreamFusion</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/dashboard">
-              <Button variant="outline">Dashboard</Button>
+            <Link to="/login">
+              <Button variant="outline">Sign In</Button>
+            </Link>
+            <Link to="/signup">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                Sign Up Free
+              </Button>
             </Link>
             <Link to="/studio">
               <Button className="bg-red-600 hover:bg-red-700">
                 <Play className="w-4 h-4 mr-2" />
-                Go Live
+                Try Demo
               </Button>
             </Link>
           </div>
