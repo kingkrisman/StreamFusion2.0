@@ -4,7 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Studio from "./pages/Studio";
 import RealStudio from "./pages/RealStudio";
 import Dashboard from "./pages/Dashboard";
@@ -19,49 +23,77 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route
-              path="/studio"
-              element={
-                <ErrorBoundary>
-                  <Studio />
-                </ErrorBoundary>
-              }
-            />
-            <Route
-              path="/real-studio"
-              element={
-                <ErrorBoundary>
-                  <RealStudio />
-                </ErrorBoundary>
-              }
-            />
-            <Route
-              path="/mobile-studio"
-              element={
-                <ErrorBoundary>
-                  <MobileStudio />
-                </ErrorBoundary>
-              }
-            />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
-            <Route
-              path="/join/:roomId"
-              element={
-                <ErrorBoundary>
-                  <JoinRoom />
-                </ErrorBoundary>
-              }
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route
+                path="/join/:roomId"
+                element={
+                  <ErrorBoundary>
+                    <JoinRoom />
+                  </ErrorBoundary>
+                }
+              />
+
+              {/* Protected routes */}
+              <Route
+                path="/studio"
+                element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Studio />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/real-studio"
+                element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <RealStudio />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mobile-studio"
+                element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <MobileStudio />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/enhanced-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <EnhancedDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>
