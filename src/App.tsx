@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Profile from "./pages/Profile";
 import Studio from "./pages/Studio";
 import RealStudio from "./pages/RealStudio";
 import Dashboard from "./pages/Dashboard";
@@ -85,6 +86,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <EnhancedDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 }
               />
